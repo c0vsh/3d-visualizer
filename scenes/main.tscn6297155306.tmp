@@ -1,0 +1,138 @@
+[gd_scene load_steps=14 format=3 uid="uid://8dpbf5hqkgpp"]
+
+[ext_resource type="Script" uid="uid://c0yknyi6cycw5" path="res://scripts/main.gd" id="1_0wfyh"]
+[ext_resource type="Script" uid="uid://m0ty2puwc3ed" path="res://scripts/orbit_camera.gd" id="2_sugp2"]
+[ext_resource type="Texture2D" uid="uid://dkim1iw5vjdk8" path="res://assets/play_pause.png" id="3_jyhfs"]
+[ext_resource type="Shader" uid="uid://bpiss6lp8gixk" path="res://shaders/grid_shader.gdshader" id="3_sugp2"]
+[ext_resource type="Shader" uid="uid://d38xap1g8g3v4" path="res://shaders/invert.gdshader" id="3_tbgi4"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sgp6g"]
+sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
+ground_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
+
+[sub_resource type="Sky" id="Sky_o5qli"]
+sky_material = SubResource("ProceduralSkyMaterial_sgp6g")
+
+[sub_resource type="Environment" id="Environment_0wfyh"]
+sky = SubResource("Sky_o5qli")
+tonemap_mode = 2
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tefeu"]
+shader = ExtResource("3_tbgi4")
+shader_parameter/tint_color = Color(0.678431, 0.678431, 0.678431, 1)
+
+[sub_resource type="InputEventKey" id="InputEventKey_tbgi4"]
+device = -1
+keycode = 32
+unicode = 32
+
+[sub_resource type="Shortcut" id="Shortcut_tefeu"]
+events = [SubResource("InputEventKey_tbgi4")]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_sugp2"]
+render_priority = 0
+shader = ExtResource("3_sugp2")
+shader_parameter/grid_color = Color(0.501961, 0.501961, 0.501961, 0.145098)
+shader_parameter/grid_size = 10.0
+shader_parameter/line_width = 0.5
+shader_parameter/fade_start = 300.0
+shader_parameter/fade_end = 400.0
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_tbgi4"]
+material = SubResource("ShaderMaterial_sugp2")
+size = Vector2(1000, 1000)
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_0wfyh")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_0wfyh")
+
+[node name="Camera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 28.0408, 0)
+script = ExtResource("2_sugp2")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.605933, 0.795516, 0, -0.795516, 0.605933, 0, 0, 0)
+
+[node name="Drones" type="Node3D" parent="."]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Panel" type="Panel" parent="CanvasLayer"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -82.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="PlayPause" type="Button" parent="CanvasLayer/Panel"]
+material = SubResource("ShaderMaterial_tefeu")
+layout_mode = 2
+offset_left = 79.0
+offset_top = 4.0
+offset_right = 147.0
+offset_bottom = 72.0
+size_flags_vertical = 4
+shortcut = SubResource("Shortcut_tefeu")
+icon = ExtResource("3_jyhfs")
+flat = true
+
+[node name="SpeedSpinBox" type="SpinBox" parent="CanvasLayer/Panel"]
+layout_mode = 2
+offset_left = 179.0
+offset_top = 10.0
+offset_right = 266.0
+offset_bottom = 66.0
+
+[node name="Stop" type="Button" parent="CanvasLayer/Panel"]
+visible = false
+layout_mode = 2
+offset_left = 717.0
+offset_top = 4.0
+offset_right = 760.0
+offset_bottom = 524.0
+text = "Stop"
+
+[node name="TimeLabel" type="Label" parent="CanvasLayer/Panel"]
+layout_mode = 2
+offset_left = 1634.0
+offset_top = 26.0
+offset_right = 1674.0
+offset_bottom = 49.0
+text = "0.00s"
+
+[node name="TimeSlider" type="HSlider" parent="CanvasLayer/Panel"]
+custom_minimum_size = Vector2(700, 0)
+layout_mode = 2
+offset_left = 351.0
+offset_top = 7.0
+offset_right = 1595.0
+offset_bottom = 75.0
+size_flags_vertical = 1
+step = 0.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/Panel"]
+visible = false
+layout_mode = 1
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -34.0
+offset_bottom = 34.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LoadLog" type="Button" parent="CanvasLayer/Panel"]
+layout_mode = 0
+offset_left = 1730.0
+offset_top = 17.0
+offset_right = 1867.0
+offset_bottom = 61.0
+text = "Загрузить файл"
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_tbgi4")

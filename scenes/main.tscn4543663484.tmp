@@ -1,0 +1,85 @@
+[gd_scene load_steps=9 format=3 uid="uid://8dpbf5hqkgpp"]
+
+[ext_resource type="Script" uid="uid://c0yknyi6cycw5" path="res://scripts/main.gd" id="1_0wfyh"]
+[ext_resource type="Script" uid="uid://m0ty2puwc3ed" path="res://scripts/orbit_camera.gd" id="2_sugp2"]
+[ext_resource type="Shader" uid="uid://bpiss6lp8gixk" path="res://shaders/grid_shader.gdshader" id="3_sugp2"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sgp6g"]
+sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
+ground_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
+
+[sub_resource type="Sky" id="Sky_o5qli"]
+sky_material = SubResource("ProceduralSkyMaterial_sgp6g")
+
+[sub_resource type="Environment" id="Environment_0wfyh"]
+sky = SubResource("Sky_o5qli")
+tonemap_mode = 2
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_sugp2"]
+render_priority = 0
+shader = ExtResource("3_sugp2")
+shader_parameter/grid_color = Color(0.501961, 0.501961, 0.501961, 0.145098)
+shader_parameter/grid_size = 1.0
+shader_parameter/line_width = 0.03
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_tbgi4"]
+material = SubResource("ShaderMaterial_sugp2")
+size = Vector2(100, 100)
+
+[node name="Main" type="Node3D"]
+script = ExtResource("1_0wfyh")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_0wfyh")
+
+[node name="Camera" type="Camera3D" parent="."]
+script = ExtResource("2_sugp2")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.605933, 0.795516, 0, -0.795516, 0.605933, 0, 0, 0)
+
+[node name="Drones" type="Node3D" parent="."]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Panel" type="Panel" parent="CanvasLayer"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -76.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CanvasLayer/Panel"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="PlayPause" type="Button" parent="CanvasLayer/Panel/HBoxContainer"]
+layout_mode = 2
+text = "PlayPause"
+
+[node name="Stop" type="Button" parent="CanvasLayer/Panel/HBoxContainer"]
+layout_mode = 2
+text = "Stop"
+
+[node name="TimeSlider" type="HSlider" parent="CanvasLayer/Panel/HBoxContainer"]
+layout_mode = 2
+
+[node name="TimeLabel" type="Label" parent="CanvasLayer/Panel/HBoxContainer"]
+layout_mode = 2
+
+[node name="SpeedSpinBox" type="SpinBox" parent="CanvasLayer/Panel/HBoxContainer"]
+layout_mode = 2
+
+[node name="LoadLog" type="Button" parent="CanvasLayer/Panel"]
+layout_mode = 0
+offset_left = 444.0
+offset_top = 5.0
+offset_right = 521.0
+offset_bottom = 36.0
+text = "Load File"
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_tbgi4")
