@@ -15,9 +15,34 @@ signal simple_spheres_toggled(enabled: bool)
 @export var time_label: Label
 @export var speed_spinbox: SpinBox
 @export var load_btn: Button
+@export var top_right_panel: HBoxContainer
+@export var stats_btn: Button
+@export var help_btn: Button
+@export var settings_btn: Button
+@export var overlay: ColorRect
 
-var stats_btn: Button
-var overlay: ColorRect
+# Диалоги
+@onready var stats_dialog: Panel = $StatisticsDialog
+@onready var stats_title: Label = $StatisticsDialog/VBoxContainer/TitleLabel
+@onready var stats_success: Label = $StatisticsDialog/VBoxContainer/SuccessLabel
+@onready var stats_fail: Label = $StatisticsDialog/VBoxContainer/FailLabel
+@onready var stats_total: Label = $StatisticsDialog/VBoxContainer/TotalLabel
+@onready var stats_rate: Label = $StatisticsDialog/VBoxContainer/RateLabel
+@onready var stats_progress: ProgressBar = $StatisticsDialog/VBoxContainer/ProgressBar
+@onready var stats_close_btn: Button = $StatisticsDialog/VBoxContainer/CloseButton
+
+@onready var settings_dialog: Window = $SettingsDialog
+@onready var labels_check: CheckBox = $SettingsDialog/VBoxContainer/LabelsCheck
+@onready var spheres_check: CheckBox = $SettingsDialog/VBoxContainer/SpheresCheck
+@onready var lang_btn: Button = $SettingsDialog/VBoxContainer/LanguageButton
+@onready var settings_cancel: Button = $SettingsDialog/VBoxContainer/HBoxContainer/CancelButton
+@onready var settings_apply: Button = $SettingsDialog/VBoxContainer/HBoxContainer/ApplyButton
+
+@onready var help_dialog: Window = $HelpDialog
+@onready var help_text: RichTextLabel = $HelpDialog/VBoxContainer/HelpText
+@onready var help_close_btn: Button = $HelpDialog/VBoxContainer/HBoxContainer/CloseButton
+
+
 var file_loader: FileLoader
 
 var current_language: String = "ru"
@@ -76,71 +101,26 @@ var translations: Dictionary = {
 }
 
 func _ready():
-	# Настройка UI
 	time_slider.drag_started.connect(_on_slider_drag_start)
 	time_slider.value_changed.connect(_on_time_slider_changed)
 	play_pause_btn.pressed.connect(_on_play_pressed)
 	speed_spinbox.value_changed.connect(_on_speed_changed)
 	load_btn.pressed.connect(func(): load_requested.emit())
-	speed_spinbox.min_value = 0.1
-	speed_spinbox.max_value = 10.0
-	speed_spinbox.step = 0.1
-	speed_spinbox.value = 1.0
-
-	# Загрузка настроек
-	load_settings()
-
-	# Создание
-	var btn_style = StyleBoxFlat.new()
-	btn_style.bg_color = Color(0.2, 0.2, 0.2, 0.7)
-	btn_style.set_corner_radius_all(8)
-	var top_panel = HBoxContainer.new()
-	top_panel.anchor_left = 1.0
-	top_panel.anchor_right = 1.0
-	top_panel.offset_left = -150
-	top_panel.offset_top = 10
-	top_panel.offset_right = -10
-	top_panel.add_theme_constant_override("separation", 10)
-	add_child(top_panel)
-
-	stats_btn = _create_icon_button("📊", btn_style)
-	stats_btn.disabled = true
 	stats_btn.pressed.connect(_show_statistics_dialog)
-	top_panel.add_child(stats_btn)
-
-	var help_btn = _create_icon_button("?", btn_style)
 	help_btn.pressed.connect(_show_help_dialog)
-	top_panel.add_child(help_btn)
-
-	var settings_btn = _create_icon_button("⚙️", btn_style)
 	settings_btn.pressed.connect(_open_settings_dialog)
-	top_panel.add_child(settings_btn)
-
-	# Затемняющий слой
-	overlay = ColorRect.new()
-	overlay.color = Color(0, 0, 0, 0.6)
-	overlay.anchor_right = 1.0
-	overlay.anchor_bottom = 1.0
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	overlay.z_index = 10
-	overlay.visible = false
-	add_child(overlay)
+	
+	load_settings()
+	
+	stats_close_btn.pressed.connect(_close_stats_dialog)
+	settings_cancel.pressed.connect(_close_settings_dialog)
+	settings_apply.pressed.connect(_apply_settings)
+	help_close_btn.pressed.connect(_close_help_dialog)
+	lang_btn.pressed.connect(_toggle_language_in_settings)
+	
 	update_language_ui()
 
-func _create_icon_button(icon: String, style: StyleBoxFlat) -> Button:
-	var btn = Button.new()
-	btn.text = icon
-	btn.flat = false
-	btn.focus_mode = Control.FOCUS_NONE
-	btn.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
-	btn.custom_minimum_size = Vector2(40, 40)
-	btn.add_theme_stylebox_override("normal", style)
-	btn.add_theme_stylebox_override("hover", style)
-	btn.add_theme_stylebox_override("pressed", style)
-	btn.add_theme_color_override("font_color", Color.WHITE)
-	return btn
 
-# ---------- Внешние интерфейсы ----------
 func set_file_loader(loader: FileLoader):
 	file_loader = loader
 
@@ -163,17 +143,17 @@ func enable_stats_button(enabled: bool):
 func update_language_ui():
 	var tr = translations[current_language]
 	load_btn.text = tr["load"]
-	#stats_btn.tooltip_text = tr["stats"]
 
 func show_overlay():
 	overlay.visible = true
 	time_slider.editable = false
+	if get_parent().is_playing:
+		get_parent()._toggle_play()
 
 func hide_overlay():
 	overlay.visible = false
 	time_slider.editable = true
 
-# ---------- Обработчики UI ----------
 func _on_play_pressed():
 	play_pressed.emit()
 
@@ -188,262 +168,99 @@ func _on_time_slider_changed(value: float):
 func _on_speed_changed(value: float):
 	speed_changed.emit(value)
 
-# ---------- Диалог статистики ----------
 func _show_statistics_dialog():
 	if not file_loader:
 		print("FileLoader not set")
 		return
 	show_overlay()
 	var tr = translations[current_language]
-
-	var panel = Panel.new()
-	panel.z_index = 20
-	panel.size = Vector2(420, 320)
-	panel.anchor_left = 0.5
-	panel.anchor_top = 0.5
-	panel.anchor_right = 0.5
-	panel.anchor_bottom = 0.5
-	panel.offset_left = -210
-	panel.offset_top = -160
-	panel.offset_right = 210
-	panel.offset_bottom = 160
-
-	var style = StyleBoxFlat.new()
-	style.bg_color = Color(0.25, 0.25, 0.25)
-	style.set_corner_radius_all(12)
-	style.border_width_top = 2
-	style.border_width_bottom = 2
-	style.border_width_left = 2
-	style.border_width_right = 2
-	style.border_color = Color.DIM_GRAY
-	panel.add_theme_stylebox_override("panel", style)
-
-	var title = Label.new()
-	title.text = tr["stat_window_title"]
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 22)
-	title.add_theme_color_override("font_color", Color.WHITE)
-	title.position = Vector2(0, 15)
-	title.size = Vector2(panel.size.x, 40)
-	panel.add_child(title)
-
-	var sep = HSeparator.new()
-	sep.position = Vector2(20, 60)
-	sep.size = Vector2(panel.size.x - 40, 5)
-	panel.add_child(sep)
-
-	var y_offset = 80
-	var line_height = 35
-
-	var success_label = Label.new()
-	success_label.text = tr["stat_success"] + str(file_loader.auth_success_count)
-	success_label.position = Vector2(30, y_offset)
-	success_label.size = Vector2(panel.size.x - 60, 30)
-	success_label.add_theme_font_size_override("font_size", 16)
-	success_label.add_theme_color_override("font_color", Color(0.3, 0.9, 0.3))
-	panel.add_child(success_label)
-	y_offset += line_height
-
-	var fail_label = Label.new()
-	fail_label.text = tr["stat_fail"] + str(file_loader.auth_fail_count)
-	fail_label.position = Vector2(30, y_offset)
-	fail_label.size = Vector2(panel.size.x - 60, 30)
-	fail_label.add_theme_font_size_override("font_size", 16)
-	fail_label.add_theme_color_override("font_color", Color(0.9, 0.3, 0.3))
-	panel.add_child(fail_label)
-	y_offset += line_height
-
+	stats_dialog.visible = true
+	stats_title.text = tr["stat_window_title"]
+	stats_success.text = tr["stat_success"] + str(file_loader.auth_success_count)
+	stats_fail.text = tr["stat_fail"] + str(file_loader.auth_fail_count)
+	
 	var total = file_loader.auth_success_count + file_loader.auth_fail_count
-	var total_label = Label.new()
-	total_label.text = tr["stat_total"] + str(total)
-	total_label.position = Vector2(30, y_offset)
-	total_label.size = Vector2(panel.size.x - 60, 30)
-	total_label.add_theme_font_size_override("font_size", 16)
-	total_label.add_theme_color_override("font_color", Color.WHITE)
-	panel.add_child(total_label)
-	y_offset += line_height
+	stats_total.text = tr["stat_total"] + str(total)
 
-	var success_rate = 0.0
+	var rate = 0.0
 	if total > 0:
-		success_rate = float(file_loader.auth_success_count) / total * 100.0
-	var rate_label = Label.new()
-	rate_label.text = tr["stat_rate"] + "%.1f%%" % success_rate
-	rate_label.position = Vector2(30, y_offset)
-	rate_label.size = Vector2(panel.size.x - 60, 30)
-	rate_label.add_theme_font_size_override("font_size", 16)
-	rate_label.add_theme_color_override("font_color", Color(1.0, 0.9, 0.5))
-	panel.add_child(rate_label)
-	y_offset += 30
+		rate = float(file_loader.auth_success_count) / total * 100.0
+	stats_rate.text = tr["stat_rate"] + "%.1f%%" % rate
 
-	var progress_bar = ProgressBar.new()
-	progress_bar.position = Vector2(30, y_offset)
-	progress_bar.size = Vector2(panel.size.x - 60, 20)
-	progress_bar.min_value = 0
-	progress_bar.max_value = 100
-	progress_bar.value = success_rate
-
-	var bg_style = StyleBoxFlat.new()
-	bg_style.bg_color = Color(0.2, 0.2, 0.25)
-	bg_style.set_corner_radius_all(8)
-	progress_bar.add_theme_stylebox_override("background", bg_style)
+	stats_progress.value = rate
 
 	var fill_style = StyleBoxFlat.new()
-	if success_rate >= 70:
+	if rate >= 70:
 		fill_style.bg_color = Color(0.2, 0.8, 0.2)
-	elif success_rate >= 30:
+	elif rate >= 30:
 		fill_style.bg_color = Color(0.9, 0.7, 0.1)
 	else:
 		fill_style.bg_color = Color(0.8, 0.2, 0.2)
 	fill_style.set_corner_radius_all(8)
-	progress_bar.add_theme_stylebox_override("fill", fill_style)
-	panel.add_child(progress_bar)
+	stats_progress.add_theme_stylebox_override("fill", fill_style)
 
-	var close_btn = Button.new()
-	close_btn.text = tr["close"]
-	close_btn.position = Vector2(panel.size.x / 2 - 40, panel.size.y - 55)
-	close_btn.size = Vector2(80, 30)
-	panel.add_child(close_btn)
-	close_btn.pressed.connect(func():
-		panel.queue_free()
-		hide_overlay()
-	)
-
-	panel.modulate = Color.TRANSPARENT
-	add_child(panel)
-	var tween = create_tween()
-	tween.tween_property(panel, "modulate", Color.WHITE, 0.25)
-
-# ---------- Диалог настроек ----------
 func _open_settings_dialog():
+	if settings_dialog.visible:
+		return
 	show_overlay()
-	var dialog = Window.new()
-	dialog.title = translations[current_language]["settings_title"]
-	dialog.size = Vector2(350, 220)
-	dialog.position = (get_viewport().size - dialog.size) / 2
-	dialog.exclusive = true
-	dialog.transient = true
-	dialog.unresizable = true
-	add_child(dialog)
-
-	var vbox = VBoxContainer.new()
-	vbox.anchor_right = 1
-	vbox.anchor_bottom = 1
-	vbox.offset_top = 10
-	vbox.offset_left = 10
-	vbox.offset_right = -10
-	vbox.offset_bottom = -50
-	dialog.add_child(vbox)
-
-	var label_check = CheckBox.new()
-	label_check.text = translations[current_language]["show_labels"]
-	label_check.button_pressed = show_node_labels
-	vbox.add_child(label_check)
-
-	var spheres_check = CheckBox.new()
+	settings_dialog.visible = true
+	labels_check.text = translations[current_language]["show_labels"]
 	spheres_check.text = translations[current_language]["simple_spheres"]
+	labels_check.button_pressed = show_node_labels
 	spheres_check.button_pressed = use_simple_spheres
-	vbox.add_child(spheres_check)
-	
-	var cancel_btn = Button.new()
-	var apply_btn = Button.new()
-	var lang_btn = Button.new()
 	lang_btn.text = translations[current_language]["language"]
-	lang_btn.flat = true
-	lang_btn.pressed.connect(func():
-		if current_language == "ru":
-			current_language = "en"
-		else:
-			current_language = "ru"
-		lang_btn.text = translations[current_language]["language"]
-		label_check.text = translations[current_language]["show_labels"]
-		spheres_check.text = translations[current_language]["simple_spheres"]
-		dialog.title = translations[current_language]["settings_title"]
-		cancel_btn.text = translations[current_language]["cancel"]
-		apply_btn.text = translations[current_language]["apply"]
-	)
-	vbox.add_child(lang_btn)
+	settings_cancel.text = translations[current_language]["cancel"]
+	settings_apply.text = translations[current_language]["apply"]
+	settings_dialog.title = translations[current_language]["settings_title"]
 
-	var spacer = Control.new()
-	spacer.custom_minimum_size = Vector2(0, 15)
-	vbox.add_child(spacer)
-
-	var hbox = HBoxContainer.new()
-	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	hbox.add_theme_constant_override("separation", 20)
-	vbox.add_child(hbox)
-
-	
-	cancel_btn.text = translations[current_language]["cancel"]
-	hbox.add_child(cancel_btn)
-
-	
-	apply_btn.text = translations[current_language]["apply"]
-	hbox.add_child(apply_btn)
-
-	cancel_btn.pressed.connect(func():
-		dialog.queue_free()
-		hide_overlay()
-	)
-
-	apply_btn.pressed.connect(func():
-		var old_spheres = use_simple_spheres
-		show_node_labels = label_check.button_pressed
-		use_simple_spheres = spheres_check.button_pressed
-		save_settings()
-		update_language_ui()
-		show_labels_toggled.emit(show_node_labels)
-		if old_spheres != use_simple_spheres:
-			# Перезагрузка лога
-			if not get_parent().scene_manager.nodes_data.is_empty():
-				simple_spheres_toggled.emit(use_simple_spheres)
-		dialog.queue_free()
-		hide_overlay()
-	)
-
-# ---------- Диалог справки ----------
 func _show_help_dialog():
+	if help_dialog.visible:
+		return
 	show_overlay()
-	var window = Window.new()
+	help_dialog.visible = true
 	var tr = translations[current_language]
-	window.title = tr["help_title"]
-	window.size = Vector2(650, 650)
-	window.position = (get_viewport().size - window.size) / 2
-	window.exclusive = true
-	window.transient = true
-	window.unresizable = true
-	add_child(window)
+	help_text.clear()
+	help_text.append_text("[b]" + tr["help_title"] + "[/b]\n\n")
+	help_text.append_text(tr["help_text"])
+	help_close_btn.text = tr["close"]
 
-	var vbox = VBoxContainer.new()
-	vbox.anchor_right = 1
-	vbox.anchor_bottom = 1
-	vbox.offset_top = 10
-	vbox.offset_left = 10
-	vbox.offset_right = -10
-	vbox.offset_bottom = -50
-	window.add_child(vbox)
+func _close_stats_dialog():
+	stats_dialog.visible = false
+	hide_overlay()
 
-	var rich_text = RichTextLabel.new()
-	rich_text.bbcode_enabled = true
-	rich_text.fit_content = true
-	rich_text.size_flags_vertical = Control.SIZE_EXPAND
-	rich_text.append_text("[b]" + tr["help_title"] + "[/b]\n\n")
-	rich_text.append_text(tr["help_text"])
-	vbox.add_child(rich_text)
+func _close_settings_dialog():
+	settings_dialog.visible = false
+	hide_overlay()
 
-	var close_btn = Button.new()
-	close_btn.text = tr["close"]
-	close_btn.size = Vector2(80, 30)
-	var hbox = HBoxContainer.new()
-	hbox.alignment = BoxContainer.ALIGNMENT_CENTER
-	hbox.add_child(close_btn)
-	vbox.add_child(hbox)
+func _apply_settings():
+	var old_spheres = use_simple_spheres
+	show_node_labels = labels_check.button_pressed
+	use_simple_spheres = spheres_check.button_pressed
+	save_settings()
+	update_language_ui()
+	show_labels_toggled.emit(show_node_labels)
+	simple_spheres_toggled.emit(use_simple_spheres)
+	if old_spheres != use_simple_spheres:
+		if not get_parent().scene_manager.nodes_data.is_empty():
+			simple_spheres_toggled.emit(use_simple_spheres)
+	_close_settings_dialog()
 
-	close_btn.pressed.connect(func():
-		window.queue_free()
-		hide_overlay()
-	)
+func _close_help_dialog():
+	help_dialog.visible = false
+	hide_overlay()
 
-# ---------- Загрузка/сохранение настроек ----------
+func _toggle_language_in_settings():
+	if current_language == "ru":
+		current_language = "en"
+	else:
+		current_language = "ru"
+	lang_btn.text = translations[current_language]["language"]
+	labels_check.text = translations[current_language]["show_labels"]
+	spheres_check.text = translations[current_language]["simple_spheres"]
+	settings_cancel.text = translations[current_language]["cancel"]
+	settings_apply.text = translations[current_language]["apply"]
+	settings_dialog.title = translations[current_language]["settings_title"]
+
 func load_settings():
 	var config = ConfigFile.new()
 	if config.load("user://settings.cfg") == OK:

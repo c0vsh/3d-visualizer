@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://8dpbf5hqkgpp"]
+[gd_scene load_steps=20 format=3 uid="uid://8dpbf5hqkgpp"]
 
 [ext_resource type="Script" uid="uid://c0yknyi6cycw5" path="res://scripts/main.gd" id="1_0wfyh"]
 [ext_resource type="Script" uid="uid://m0ty2puwc3ed" path="res://scripts/camera_controller.gd" id="2_sugp2"]
@@ -21,6 +21,25 @@ unicode = 32
 
 [sub_resource type="Shortcut" id="Shortcut_tefeu"]
 events = [SubResource("InputEventKey_tbgi4")]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_85g3d"]
+bg_color = Color(0.25, 0.25, 0.25, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.411765, 0.411765, 0.411765, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_choun"]
+bg_color = Color(0.2, 0.2, 0.25, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_sgp6g"]
 sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
@@ -58,13 +77,18 @@ animation_controller = NodePath("AnimationController")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 28.0408, 0)
 script = ExtResource("2_sugp2")
 
-[node name="UIManager" type="CanvasLayer" parent="." node_paths=PackedStringArray("play_pause_btn", "time_slider", "time_label", "speed_spinbox", "load_btn")]
+[node name="UIManager" type="CanvasLayer" parent="." node_paths=PackedStringArray("play_pause_btn", "time_slider", "time_label", "speed_spinbox", "load_btn", "top_right_panel", "stats_btn", "help_btn", "settings_btn", "overlay")]
 script = ExtResource("3_tipki")
 play_pause_btn = NodePath("Panel/HBoxContainer/PlayPause")
 time_slider = NodePath("Panel/HBoxContainer/TimeSlider")
 time_label = NodePath("Panel/HBoxContainer/TimeLabel")
 speed_spinbox = NodePath("Panel/HBoxContainer/SpeedSpinBox")
 load_btn = NodePath("Panel/HBoxContainer/LoadLog")
+top_right_panel = NodePath("TopRightPanel")
+stats_btn = NodePath("TopRightPanel/StatsButton")
+help_btn = NodePath("TopRightPanel/HelpButton")
+settings_btn = NodePath("TopRightPanel/SettingsButton")
+overlay = NodePath("Overlay")
 
 [node name="Panel" type="Panel" parent="UIManager"]
 anchors_preset = 12
@@ -103,6 +127,10 @@ flat = true
 
 [node name="SpeedSpinBox" type="SpinBox" parent="UIManager/Panel/HBoxContainer"]
 layout_mode = 2
+min_value = 0.1
+max_value = 10.0
+step = 0.1
+value = 1.0
 
 [node name="TimeSlider" type="HSlider" parent="UIManager/Panel/HBoxContainer"]
 layout_mode = 2
@@ -124,6 +152,245 @@ text = "Загрузить файл"
 
 [node name="VSeparator2" type="VSeparator" parent="UIManager/Panel/HBoxContainer"]
 layout_mode = 2
+
+[node name="TopRightPanel" type="HBoxContainer" parent="UIManager"]
+anchors_preset = -1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -150.0
+offset_top = 10.0
+offset_right = -10.0
+theme_override_constants/separation = 10
+
+[node name="StatsButton" type="Button" parent="UIManager/TopRightPanel"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+disabled = true
+text = "📊"
+
+[node name="HelpButton" type="Button" parent="UIManager/TopRightPanel"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+text = "?"
+
+[node name="SettingsButton" type="Button" parent="UIManager/TopRightPanel"]
+custom_minimum_size = Vector2(40, 40)
+layout_mode = 2
+focus_mode = 0
+mouse_default_cursor_shape = 2
+text = "⚙️"
+
+[node name="Overlay" type="ColorRect" parent="UIManager"]
+visible = false
+z_index = 10
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="StatisticsDialog" type="Panel" parent="UIManager"]
+visible = false
+z_index = 20
+custom_minimum_size = Vector2(420, 320)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = -160.0
+offset_right = 210.0
+offset_bottom = 160.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_85g3d")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UIManager/StatisticsDialog"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect3" type="ColorRect" parent="UIManager/StatisticsDialog/VBoxContainer"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+color = Color(1, 1, 1, 0)
+
+[node name="TitleLabel" type="Label" parent="UIManager/StatisticsDialog/VBoxContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 22
+text = "Статистика"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="UIManager/StatisticsDialog/VBoxContainer"]
+custom_minimum_size = Vector2(380, 5)
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="SuccessLabel" type="Label" parent="UIManager/StatisticsDialog/VBoxContainer"]
+custom_minimum_size = Vector2(360, 30)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.3, 0.9, 0.3, 1)
+theme_override_font_sizes/font_size = 16
+text = "Success"
+vertical_alignment = 2
+
+[node name="FailLabel" type="Label" parent="UIManager/StatisticsDialog/VBoxContainer"]
+custom_minimum_size = Vector2(360, 30)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.9, 0.3, 0.3, 1)
+theme_override_font_sizes/font_size = 16
+text = "Fail"
+vertical_alignment = 2
+
+[node name="TotalLabel" type="Label" parent="UIManager/StatisticsDialog/VBoxContainer"]
+custom_minimum_size = Vector2(360, 30)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 16
+text = "Total"
+vertical_alignment = 2
+
+[node name="RateLabel" type="Label" parent="UIManager/StatisticsDialog/VBoxContainer"]
+custom_minimum_size = Vector2(360, 30)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(1, 0.9, 0.5, 1)
+theme_override_font_sizes/font_size = 16
+text = "Rate"
+vertical_alignment = 2
+
+[node name="ColorRect2" type="ColorRect" parent="UIManager/StatisticsDialog/VBoxContainer"]
+custom_minimum_size = Vector2(0, 5)
+layout_mode = 2
+color = Color(1, 1, 1, 0)
+
+[node name="ProgressBar" type="ProgressBar" parent="UIManager/StatisticsDialog/VBoxContainer"]
+custom_minimum_size = Vector2(360, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_styles/background = SubResource("StyleBoxFlat_choun")
+
+[node name="ColorRect" type="ColorRect" parent="UIManager/StatisticsDialog/VBoxContainer"]
+custom_minimum_size = Vector2(0, 25)
+layout_mode = 2
+color = Color(1, 1, 1, 0)
+
+[node name="CloseButton" type="Button" parent="UIManager/StatisticsDialog/VBoxContainer"]
+custom_minimum_size = Vector2(80, 30)
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Закрыть"
+
+[node name="SettingsDialog" type="Window" parent="UIManager"]
+title = "Настройки"
+initial_position = 1
+size = Vector2i(350, 220)
+visible = false
+transient = true
+exclusive = true
+unresizable = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UIManager/SettingsDialog"]
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LabelsCheck" type="CheckBox" parent="UIManager/SettingsDialog/VBoxContainer"]
+layout_mode = 2
+text = "Подписи"
+
+[node name="SpheresCheck" type="CheckBox" parent="UIManager/SettingsDialog/VBoxContainer"]
+layout_mode = 2
+text = "Модели"
+
+[node name="Control2" type="Control" parent="UIManager/SettingsDialog/VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="LanguageButton" type="Button" parent="UIManager/SettingsDialog/VBoxContainer"]
+layout_mode = 2
+text = "Язык: Русский"
+flat = true
+
+[node name="Control" type="Control" parent="UIManager/SettingsDialog/VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UIManager/SettingsDialog/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+alignment = 1
+
+[node name="ApplyButton" type="Button" parent="UIManager/SettingsDialog/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Применить"
+
+[node name="CancelButton" type="Button" parent="UIManager/SettingsDialog/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Отмена"
+
+[node name="HelpDialog" type="Window" parent="UIManager"]
+title = "Инструкция"
+initial_position = 1
+size = Vector2i(650, 650)
+visible = false
+transient = true
+exclusive = true
+unresizable = true
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UIManager/HelpDialog"]
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = -10.0
+
+[node name="HelpText" type="RichTextLabel" parent="UIManager/HelpDialog/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "Rerum voluptatem minima reprehenderit nam ipsum et quae. Assumenda dicta culpa enim vel. Et unde nostrum et perferendis praesentium necessitatibus. Illo laudantium eaque quae recusandae quos nesciunt voluptate. Voluptas vel assumenda est placeat.
+
+Sed rerum inventore in. Voluptatum fugiat qui hic sit sed explicabo. Aut nostrum amet dolorum velit impedit eum id. Reiciendis blanditiis deleniti excepturi ut in illum rerum. Maiores tempore ut impedit blanditiis omnis labore tempore omnis. Est corporis omnis ducimus mollitia quidem cupiditate.
+
+Maxime explicabo consequatur enim et ducimus culpa vitae a. Excepturi harum adipisci aut. Numquam cupiditate harum laborum sunt.
+
+Ut sed praesentium asperiores aut ad. Non magnam consequuntur officiis incidunt minus facilis. Itaque ad perspiciatis doloremque. Ipsum iusto provident debitis. Et veniam animi itaque aut.
+
+Fugiat consequatur doloremque suscipit cumque voluptate libero natus quia. Dolorem quibusdam error doloremque quod aliquam vitae explicabo repellat. Voluptatem tenetur nostrum sit sint quia nam mollitia. Praesentium neque debitis molestiae in dignissimos temporibus inventore."
+fit_content = true
+
+[node name="HBoxContainer" type="HBoxContainer" parent="UIManager/HelpDialog/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="CloseButton" type="Button" parent="UIManager/HelpDialog/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Закрыть"
 
 [node name="FileLoader" type="Node" parent="."]
 script = ExtResource("6_85g3d")

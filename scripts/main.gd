@@ -13,7 +13,6 @@ var playback_speed: float = 1.0
 var animated_packets: Dictionary = {}
 
 func _ready():
-	# Связываем сигналы
 	file_loader.log_loaded.connect(_on_log_loaded)
 	file_loader.load_error.connect(_on_load_error)
 	ui.play_pressed.connect(_toggle_play)
@@ -50,7 +49,7 @@ func _process(delta):
 func _toggle_play():
 	if file_loader.nodes_keyframes.is_empty():
 		return
-	if ui.overlay.visible:
+	if not is_playing and ui.overlay.visible:
 		return
 	is_playing = not is_playing
 	ui.set_playing_state(is_playing)

@@ -40,7 +40,8 @@ func _clear_scene():
 		child.queue_free()
 	nodes_data.clear()
 	_clear_active_lines()
-	#_clear_auth_labels()
+	_clear_auth_labels(active_auth_labels)
+	_clear_auth_labels(active_auth_ok_labels)
 
 func _create_drone_meshes():
 	var use_model = (drone_scene != null) and not use_simple_spheres
